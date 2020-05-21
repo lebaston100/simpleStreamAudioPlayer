@@ -20,14 +20,14 @@ Just make sure you use unique names for the files.
 `volValue` = 0-1, float
 `timeInSec` = time left in playback, in sec(thanks chromium) (updates multiple times a sec)
 
-Requests: (websocket server -> player.html)
-Play file: `{"dst": "file", "action": "play"}`
-Pause playback: `{"dst": "file", "action": "pause"}`
-Stop playback: `{"dst": "file", "action": "stop"}`
-Set playback volume: `{"dst": "file", "action": "setVolume", "volume": volValue}`
+Requests: (websocket server -> player.html)  
+Play file: `{"dst": "file", "action": "play"}`  
+Pause playback: `{"dst": "file", "action": "pause"}`  
+Stop playback: `{"dst": "file", "action": "stop"}`  
+Set playback volume: `{"dst": "file", "action": "setVolume", "volume": volValue}`  
 
-Events: (player.html -> websocket server)
-Time remaining: `{"update": "timeupdate","timeleft": timeInSec,"source": "file"}`
-Paused: `{"update": "pause","timeleft": timeInSec,"source": "file"}`
-Playing: `{"update": "playing","timeleft": timeInSec,"source": "file"}`
-Ended: `{"update": "ended","timeleft": timeInSec,"source": "file"}`
+Events: (player.html -> websocket server)  
+Time remaining: `{"update": "timeupdate","timeleft": timeInSec,"source": "file"}`  
+Paused: `{"update": "pause","timeleft": timeInSec,"source": "file"}`  
+Playing: `{"update": "playing","timeleft": timeInSec,"source": "file"}`  
+Ended: `{"update": "ended","timeleft": timeInSec,"source": "file"}`  
