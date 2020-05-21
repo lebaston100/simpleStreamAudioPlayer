@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Live Audio Player</title>
+	<script>
+
+    //Settings here
+    //An array object for each file. File has to be in the same dir as this player file.
+    let audiofiles = [{"filename": "test1.wav"},
+                     {"filename": "test2.mp3"},
+                     {"filename": "test3.mp3"}];
+    let websocketAdr = "ws://127.0.0.1:1880/ws/player";
+
+    let hasPlayer = false;
+
+	//register page load event listener to start my work
+    window.addEventListener("load", pageInit, false);
+
+    function pageInit() {
+        connectWebsocket();
+    }
+
+	//some variables
+	var intervalID = 0;
+	var socketisOpen = false;
+
+	//Handle websocket connection stuff
+	function connectWebsocket() {
+		websocket = new WebSocket(websocketAdr);
+
+		websocket.onopen = function(evt) {
+			socketisOpen = 1;
+			clearInterval(intervalID);
+            intervalID = 0;
+            if (!hasPlayer) createPlayers();
+		};
+
+		websocket.onclose = function(evt) {
+			socketisOpen = 0;
+			if (!intervalID) intervalID = setInterval(connectWebsocket, 1000);
+		};
+
+		websocket.onmessage = function(evt) {
+			var data = JSON.parse(evt.data);
+			//console.log(data);
+			if (data.hasOwnProperty("action") && data.hasOwnProperty("dst")) {
+				handleWebsocketMessage(data);
+			}
+		};
+
+		websocket.onerror = function(evt) {
+			socketisOpen = 0;
+			if (!intervalID) intervalID = setInterval(connectWebsocket, 1000);
+		};
+    }
+
+    function handleWebsocketMessage(m) {
+        var audio = document.getElementById(`player-${m.dst}`);
+
+        if (m.action == "play") {
+            audio.play();
+        } else if (m.action == "pause") {
+            audio.pause();
+        } else if (m.action == "stop") {
+            audio.pause();
+            audio.currentTime = 0;
+        } else if (m.action == "setVolume") {
+            audio.volume = m.volume;
+        }
+    }
+
+    function createPlayers() {
+        hasPlayer = true;
+        let cssbox = document.getElementById("playerbox");
+
+        audiofiles.forEach((item) => {
+            var elm = document.createElement("audio");
+
+            let itemname = item.filename.slice(0, -4);
+            let fileextension = item.filename.split(".").pop();
+            let type;
+
+            if (fileextension == "mp3") {
+                type = "audio/mpeg";
+            } else if (fileextension == "wav") {
+                type = "audio/wav";
+            } if (fileextension == "ogg") {
+                type = "audio/ogg";
+            }
+
+            let source = document.createElement('source');
+            source.src = item.filename;
+            source.type = type;
+
+            elm.id = `player-${itemname}`;
+            elm.preload = "auto";
+
+            //Add event listener
+            elm.addEventListener("timeupdate", function() {
+                var timeLeft = parseInt(elm.duration) - parseInt(elm.currentTime);
+                let messageobject = {"update": "timeupdate", "timeleft": timeLeft, "name": itemname};
+                websocket.send(JSON.stringify(messageobject));
+            }, false);
+
+            elm.addEventListener("pause", function() {
+                let messageobject = {"update": "pause", "name": itemname};
+                websocket.send(JSON.stringify(messageobject));
+            }, false);
+
+            elm.addEventListener("playing", function() {
+                let messageobject = {"update": "playing", "name": itemname};
+                websocket.send(JSON.stringify(messageobject));
+            }, false);
+
+            elm.addEventListener("ended", function() {
+                let messageobject = {"update": "ended", "name": itemname};
+                websocket.send(JSON.stringify(messageobject));
+            }, false);
+
+            elm.appendChild(source);
+            cssbox.appendChild(elm);
+        });
+    }
+</script>
+</head>
+<body style="display: none;">
+<div id="playerbox"></div>
+</body>
+</html>
